@@ -29,15 +29,15 @@ class PrimitiveType(Enum):
     VOID = 'void'
     INT = 'int'
     DOUBLE = 'double'
-    BOOL = 'bool'
-    STR = 'string'
+    BOOL = 'boolean'
+    STR = 'String'
 
     def __str__(self):
         return self.value
 
 
 VOID, INT, DOUBLE, BOOL, STR = PrimitiveType.VOID, PrimitiveType.INT, PrimitiveType.DOUBLE, \
-                               PrimitiveType.BOOL, PrimitiveType.STR
+                                     PrimitiveType.BOOL, PrimitiveType.STR
 
 
 # работа с типами данных
@@ -116,9 +116,9 @@ for primitive_type in PrimitiveType:
 
 # переменные могут быть параметром функции или локальными
 class VariableScope(Enum):
-
     PARAM = 'param'
     LOCAL = 'local'
+    GLOBAL = 'global'
 
     def __str__(self):
         return self.value
@@ -139,47 +139,68 @@ class IdentDesc:
 
 # область видимости
 class IdentScope:
-    def __init__(self, parent: Optional['IdentScope'] = None):
+    """Класс для представлений областей видимости переменных во время семантического анализа
+    """
+
+    def __init__(self, parent: Optional['IdentScope'] = None) -> None:
         self.idents: Dict[str, IdentDesc] = {}
-        self.function: Optional[IdentDesc] = None
+        self.func: Optional[IdentDesc] = None
         self.parent = parent
         self.var_index = 0
         self.param_index = 0
 
     @property
-    def curr_func(self):
+    def is_global(self) -> bool:
+        return self.parent is None
+
+    @property
+    def curr_global(self) -> 'IdentScope':
         curr = self
-        while curr and not curr.function:
+        while curr.parent:
             curr = curr.parent
         return curr
 
-    def add_ident(self, new_ident: IdentDesc):
-        func_scope = self.curr_func
+    @property
+    def curr_func(self) -> Optional['IdentScope']:
+        curr = self
+        while curr and not curr.func:
+            curr = curr.parent
+        return curr
 
-        if new_ident.scope != VariableScope.PARAM:
-            new_ident.scope = VariableScope.LOCAL
-        existing_ident = self.get_ident(new_ident.name)
-        if existing_ident:
+    def add_ident(self, ident: IdentDesc) -> IdentDesc:
+        func_scope = self.curr_func
+        global_scope = self.curr_global
+
+        if ident.scope != VariableScope.PARAM:
+            ident.scope = VariableScope.LOCAL if func_scope else VariableScope.GLOBAL
+
+        old_ident = self.get_ident(ident.name)
+        if old_ident:
             error = False
-            if new_ident.scope == VariableScope.PARAM:
-                if existing_ident.scope == VariableScope.PARAM:
+            if ident.scope == VariableScope.PARAM:
+                if old_ident.scope == VariableScope.PARAM:
+                    error = True
+            elif ident.scope == VariableScope.LOCAL:
+                if old_ident.scope not in (VariableScope.GLOBAL):
                     error = True
             else:
                 error = True
             if error:
-                raise SemanticException('Идентификатор {} уже объявлен'.format(new_ident.name))
-        if not new_ident.type.function:
-            if new_ident.scope == VariableScope.PARAM:
-                new_ident.index = func_scope.param_index
+                raise SemanticException('Идентификатор {} уже объявлен'.format(ident.name))
+
+        if not ident.type.function:
+            if ident.scope == VariableScope.PARAM:
+                ident.index = func_scope.param_index
                 func_scope.param_index += 1
             else:
-                ident_scope = func_scope
-                new_ident.index = ident_scope.var_index
+                ident_scope = func_scope if func_scope else global_scope
+                ident.index = ident_scope.var_index
                 ident_scope.var_index += 1
-        self.idents[new_ident.name] = new_ident
-        return new_ident
 
-    def get_ident(self, name: str):
+        self.idents[ident.name] = ident
+        return ident
+
+    def get_ident(self, name: str) -> Optional[IdentDesc]:
         scope = self
         ident = None
         while scope:
@@ -190,7 +211,6 @@ class IdentScope:
         return ident
 
 
-# исключения
 class SemanticException(Exception):
     def __init__(self, message, row: int = None, col: int = None, **kwargs: Any):
         if row or col:
@@ -301,11 +321,21 @@ BINARY_OPERATION_TYPE_COMPATIBILITY = {
     },
 }
 
-
 # создает новую область видимости для программы
-def create_scope():
+BUILT_IN_OBJECTS = '''
+    String read() { }
+    void print(String p0) { }
+    void println(String p0) { }
+    int to_int(String p0) { }
+    int to_float(String p0) { }
+'''
+
+
+def prepare_global_scope() -> IdentScope:
+    from _parser import parse
+    prog = parse(BUILT_IN_OBJECTS)
     scope = IdentScope()
+    prog.semantic_check(scope)
     for name, ident in scope.idents.items():
         ident.built_in = True
     scope.var_index = 0
-    return scope

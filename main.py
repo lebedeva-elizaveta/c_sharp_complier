@@ -1,6 +1,7 @@
 import os
 
 import _parser
+import semantic
 
 
 def main():
@@ -50,6 +51,17 @@ def execute(prog: str):
     prog = _parser.parse(prog)
     print('ast:')
     print(*prog.tree, sep=os.linesep)
+
+    print('semantic_check:')
+    try:
+        scope = semantic.prepare_global_scope()
+        print("prepared")
+        prog.semantic_check(scope)
+        print(*prog.tree, sep=os.linesep)
+    except semantic.SemanticException as e:
+        print('Ошибка: {}'.format(e.message))
+        return
+    print()
 
 
 if __name__ == "__main__":

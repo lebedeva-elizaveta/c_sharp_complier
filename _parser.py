@@ -105,7 +105,7 @@ def make_parser():
                     second_node = tocs[i + 1]
                     if not isinstance(second_node, AstNode):
                         second_node = binary_operation_parse_action(s, loc, second_node)
-                    node = BinaryOperationNode(BinaryOperation(tocs[i]), node, second_node, loc=loc)
+                    node = BinOpNode(BinaryOperation(tocs[i]), node, second_node, loc=loc)
                 return node
 
             parser_element.setParseAction(binary_operation_parse_action)
