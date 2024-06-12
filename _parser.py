@@ -131,6 +131,7 @@ def make_parser():
 
 parser = make_parser()
 
+
 # разбирает переданный программный код и возвращает соответствующее AST
 def parse(prog: str):
     locs = []

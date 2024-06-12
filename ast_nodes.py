@@ -81,6 +81,7 @@ class _GroupNode(AstNode):
 
 # выражения
 class ExprNode(AstNode, ABC):
+
     pass
 
 
@@ -101,14 +102,14 @@ class LiteralNode(ExprNode):
 
     def semantic_check(self, scope: IdentScope) -> None:
         if isinstance(self.value, bool):
-            self.node_type = DataType.BOOL
+            self.node_type = DataType.BOOLEAN
         # проверка должна быть позже bool, т.к. bool наследник от int
         elif isinstance(self.value, int):
             self.node_type = DataType.INT
         elif isinstance(self.value, float):
             self.node_type = DataType.DOUBLE
         elif isinstance(self.value, str):
-            self.node_type = DataType.STR
+            self.node_type = DataType.STRING
         else:
             self.semantic_error('Неизвестный тип {} для {}'.format(type(self.value), self.value))
 
@@ -148,6 +149,7 @@ class TypeNode(IdentNode):
     def semantic_check(self, scope: IdentScope) -> None:
         if self.type is None:
             self.semantic_error('Неизвестный тип {}'.format(self.name))
+
 
 # класс для бинарных операций
 class BinOpNode(ExprNode):
@@ -270,6 +272,13 @@ class TypeConvertNode(ExprNode):
 
 
 def type_convert(expr: ExprNode, type_: DataType, except_node: Optional[AstNode] = None, comment: Optional[str] = None) -> ExprNode:
+    """Метод преобразования ExprNode узла AST-дерева к другому типу
+    :param expr: узел AST-дерева
+    :param type_: требуемый тип
+    :param except_node: узел, о которого будет исключение
+    :param comment: комментарий
+    :return: узел AST-дерева c операцией преобразования
+    """
 
     if expr.node_type is None:
         except_node.semantic_error('Тип выражения не определен')
@@ -285,6 +294,7 @@ def type_convert(expr: ExprNode, type_: DataType, except_node: Optional[AstNode]
 
 
 class StmtNode(ExprNode, ABC):
+
     def to_str_full(self):
         return self.to_str()
 
@@ -383,7 +393,7 @@ class IfNode(StmtNode):
 
     def semantic_check(self, scope: IdentScope) -> None:
         self.cond.semantic_check(scope)
-        self.cond = type_convert(self.cond, DataType.BOOL, None, 'условие')
+        self.cond = type_convert(self.cond, DataType.BOOLEAN, None, 'условие')
         self.then_stmt.semantic_check(IdentScope(scope))
         if self.else_stmt:
             self.else_stmt.semantic_check(IdentScope(scope))
@@ -415,7 +425,7 @@ class ForNode(StmtNode):
         if self.cond == EMPTY_STMT:
             self.cond = LiteralNode('true')
         self.cond.semantic_check(scope)
-        self.cond = type_convert(self.cond, DataType.BOOL, None, 'условие')
+        self.cond = type_convert(self.cond, DataType.BOOLEAN, None, 'условие')
         self.step.semantic_check(scope)
         self.body.semantic_check(IdentScope(scope))
         self.node_type = DataType.VOID
@@ -486,7 +496,7 @@ class FuncNode(StmtNode):
         self.name.node_type = type_
         try:
             self.name.node_ident = parent_scope.curr_global.add_ident(func_ident)
-        except SemanticException as e:
+        except SemanticException:
             self.name.semantic_error("Повторное объявление функции {}".format(self.name.name))
         self.body.semantic_check(scope)
         self.node_type = DataType.VOID

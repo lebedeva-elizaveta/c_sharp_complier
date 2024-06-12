@@ -24,7 +24,7 @@ def main():
     prog2 = '''
     int a = 5;
     int b = 4;
-    int s = a * b;
+    intt s = a * b;
     '''
 
     prog3 = '''
@@ -32,7 +32,7 @@ def main():
     int b = 7;
     if (b > a)
     {
-        a = b;
+        a = d;
     }
     '''
     prog4 = '''

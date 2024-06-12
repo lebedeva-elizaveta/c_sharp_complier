@@ -36,7 +36,7 @@ class PrimitiveType(Enum):
         return self.value
 
 
-VOID, INT, DOUBLE, BOOL, STR = PrimitiveType.VOID, PrimitiveType.INT, PrimitiveType.DOUBLE, \
+VOID, INT, DOUBLE, BOOLEAN, STRING = PrimitiveType.VOID, PrimitiveType.INT, PrimitiveType.DOUBLE, \
                                      PrimitiveType.BOOL, PrimitiveType.STR
 
 
@@ -45,8 +45,8 @@ class DataType:
     VOID: 'DataType'
     INT: 'DataType'
     DOUBLE: 'DataType'
-    BOOL: 'DataType'
-    STR: 'DataType'
+    BOOLEAN: 'DataType'
+    STRING: 'DataType'
 
     def __init__(self, primitive_type_: Optional[PrimitiveType] = None,
                  return_type: Optional['DataType'] = None, params: Optional[Tuple['DataType']] = None):
@@ -114,7 +114,7 @@ for primitive_type in PrimitiveType:
     setattr(DataType, primitive_type.name, DataType(primitive_type))
 
 
-# переменные могут быть параметром функции или локальными
+# переменные могут быть параметром функции, локальными или глобальными
 class VariableScope(Enum):
     PARAM = 'param'
     LOCAL = 'local'
@@ -227,9 +227,9 @@ class SemanticException(Exception):
 
 # конвертация типов
 TYPE_CONVERTIBILITY = {
-    INT: (DOUBLE, BOOL, STR),
-    DOUBLE: (STR,),
-    BOOL: (STR,)
+    INT: (DOUBLE, BOOLEAN, STRING),
+    DOUBLE: (STRING,),
+    BOOLEAN: (STRING,)
 }
 
 
@@ -246,7 +246,7 @@ BINARY_OPERATION_TYPE_COMPATIBILITY = {
     BinaryOperation.ADD: {
         (INT, INT): INT,
         (DOUBLE, DOUBLE): DOUBLE,
-        (STR, STR): STR,
+        (STRING, STRING): STRING,
         (INT, DOUBLE): DOUBLE,
         (DOUBLE, INT): DOUBLE
     },
@@ -276,34 +276,34 @@ BINARY_OPERATION_TYPE_COMPATIBILITY = {
     },
 
     BinaryOperation.GT: {
-        (INT, INT): BOOL,
-        (DOUBLE, DOUBLE): BOOL,
-        (STR, STR): BOOL,
+        (INT, INT): BOOLEAN,
+        (DOUBLE, DOUBLE): BOOLEAN,
+        (STRING, STRING): BOOLEAN,
     },
     BinaryOperation.LT: {
-        (INT, INT): BOOL,
-        (DOUBLE, DOUBLE): BOOL,
-        (STR, STR): BOOL,
+        (INT, INT): BOOLEAN,
+        (DOUBLE, DOUBLE): BOOLEAN,
+        (STRING, STRING): BOOLEAN,
     },
     BinaryOperation.GE: {
-        (INT, INT): BOOL,
-        (DOUBLE, DOUBLE): BOOL,
-        (STR, STR): BOOL,
+        (INT, INT): BOOLEAN,
+        (DOUBLE, DOUBLE): BOOLEAN,
+        (STRING, STRING): BOOLEAN,
     },
     BinaryOperation.LE: {
-        (INT, INT): BOOL,
-        (DOUBLE, DOUBLE): BOOL,
-        (STR, STR): BOOL,
+        (INT, INT): BOOLEAN,
+        (DOUBLE, DOUBLE): BOOLEAN,
+        (STRING, STRING): BOOLEAN,
     },
     BinaryOperation.EQUALS: {
-        (INT, INT): BOOL,
-        (DOUBLE, DOUBLE): BOOL,
-        (STR, STR): BOOL,
+        (INT, INT): BOOLEAN,
+        (DOUBLE, DOUBLE): BOOLEAN,
+        (STRING, STRING): BOOLEAN,
     },
     BinaryOperation.NOTEQUALS: {
-        (INT, INT): BOOL,
-        (DOUBLE, DOUBLE): BOOL,
-        (STR, STR): BOOL,
+        (INT, INT): BOOLEAN,
+        (DOUBLE, DOUBLE): BOOLEAN,
+        (STRING, STRING): BOOLEAN,
     },
 
     BinaryOperation.BIT_AND: {
@@ -314,20 +314,15 @@ BINARY_OPERATION_TYPE_COMPATIBILITY = {
     },
 
     BinaryOperation.LOGICAL_AND: {
-        (BOOL, BOOL): BOOL
+        (BOOLEAN, BOOLEAN): BOOLEAN
     },
     BinaryOperation.LOGICAL_OR: {
-        (BOOL, BOOL): BOOL
+        (BOOLEAN, BOOLEAN): BOOLEAN
     },
 }
 
-# создает новую область видимости для программы
+
 BUILT_IN_OBJECTS = '''
-    String read() { }
-    void print(String p0) { }
-    void println(String p0) { }
-    int to_int(String p0) { }
-    int to_float(String p0) { }
 '''
 
 
@@ -339,3 +334,4 @@ def prepare_global_scope() -> IdentScope:
     for name, ident in scope.idents.items():
         ident.built_in = True
     scope.var_index = 0
+    return scope
